@@ -5,8 +5,6 @@ This repository serves as a comprehensive showcase for statistical rigor and int
 ## Core Methodology: MABT
 The central element of this project is the Multiplicity-Adjusted Bootstrap Tilting (MABT) method. When the best model is chosen from a variety of candidates (e.g., through hyperparameter optimization or the comparison of different model families), the observed test performance is often optimistically biased. MABT provides valid lower confidence limits for performance after selection, ensuring that the reported results are statistically sound.
 
-[Image of Bootstrap resampling process for confidence intervals]
-
 ## Project Structure
 
 ### 01_xgboost_shap
@@ -26,8 +24,6 @@ The script implements a robust pipeline designed for regulated environments (suc
    - Global: Beeswarm and bar plots to analyze feature importance across the entire dataset.
    - Local: Waterfall plots to explain individual credit decisions (Right to Explanation).
    - Error Analysis: Utilizing SHAP values to deconstruct specific misclassifications.
-
-[Image of SHAP beeswarm plot]
 
 ## Roadmap for Further Modules
 
