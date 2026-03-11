@@ -25,9 +25,105 @@ The script implements a robust pipeline designed for regulated environments (suc
    - Local: Waterfall plots to explain individual credit decisions (Right to Explanation).
    - Error Analysis: Utilizing SHAP values to deconstruct specific misclassifications.
 
-## Roadmap for Further Modules
 
-### 02_deep_learning
+### 02_deep_learning: Deep Learning Example: Fashion-MNIST with Post-Selection Inference
+
+This module demonstrates how **post-selection performance guarantees** can be applied in a deep learning setting. The experiment trains several neural network architectures on the **Fashion-MNIST** dataset and evaluates them using the **MABT (Model-Agnostic Bound Technique)** to obtain a valid lower confidence bound on the performance of the model selected after evaluation.
+
+#### Dataset
+
+The experiment uses the **Fashion-MNIST** dataset, which consists of:
+
+* 70,000 grayscale images of clothing items
+* Image size: **28 × 28 pixels**
+* **10 classes** (e.g., T-shirt, sneaker, coat)
+
+The data is split into:
+
+* **Training set** – used to fit model parameters
+* **Validation set** – used for model selection
+* **Test set** – used only for final evaluation and post-selection inference
+
+#### Candidate Models
+
+Several neural network architectures are considered:
+
+* Multiple **MLP (feedforward) networks** with varying widths and dropout rates
+* Multiple **CNN architectures** with different convolutional widths and fully connected layers
+
+Each candidate architecture is trained with **multiple random seeds** to account for stochasticity in neural network optimization.
+
+#### Experimental Pipeline
+
+The experiment follows a multi-stage model selection procedure:
+
+1. **Candidate generation**
+   A library of neural network architectures is defined.
+
+2. **Training across seeds**
+   Each architecture is trained with several random seeds to account for optimization variability.
+
+3. **Seed-aggregated validation performance**
+   For each architecture, validation accuracy is averaged across seeds.
+
+4. **Validation-based preselection**
+   Architectures within a small margin of the best validation performance are retained:
+
+   [
+   \bar A_{\text{val}}(m) \ge \max_j \bar A_{\text{val}}(j) - \delta
+   ]
+
+5. **Representative model selection**
+   For each shortlisted architecture, a representative training run is selected (the seed with the best validation accuracy).
+
+6. **Test predictions**
+   The shortlisted models generate predictions on the test set.
+
+7. **Post-selection inference (MABT)**
+   Among the shortlisted models, the one with the best test accuracy is selected.
+   The **MABT method** is then used to compute a **selection-adjusted lower confidence bound** for the true performance of this selected model.
+
+#### Stored Outputs
+
+The experiment stores the predictions of all shortlisted models on the test set:
+
+```
+outputs/shortlist_test_predictions.csv
+```
+
+Structure:
+
+| column    | description                             |
+| --------- | --------------------------------------- |
+| `y_true`  | true test label                         |
+| `model_1` | predictions of first shortlisted model  |
+| `model_2` | predictions of second shortlisted model |
+| ...       | ...                                     |
+
+Additionally, a binary correctness matrix is stored:
+
+```
+outputs/shortlist_test_accuracy_matrix.csv
+```
+
+Each entry indicates whether a model correctly classified a test observation:
+
+[
+Z_{ij} = \mathbf{1}{\hat y_{ij} = y_i}
+]
+
+This matrix is the input used by the **MABT procedure**.
+
+#### Result
+
+The final output of the pipeline is:
+
+* the **naively selected test-best model**
+* a **selection-adjusted lower confidence bound** on its accuracy computed via `mabt_ci`.
+
+This example illustrates that **model selection bias also arises in deep learning workflows**, and demonstrates how post-selection inference can provide statistically valid performance guarantees even after architecture comparison and model selection.
+
+## Roadmap for Further Modules
 
 ### 03_transformers
 
