@@ -126,31 +126,9 @@ This example illustrates that **model selection bias also arises in deep learnin
 
 ### 03_transformers: Post-Selection Performance with Transformers
 
-This example demonstrates how **post-selection bias arises when
-evaluating machine learning models on test data** and how **MABT
-(Model-Agnostic Bootstrap Testing)** can be used to obtain **valid
-confidence bounds after data-dependent model selection**.
+This example demonstrates how MABT can be used together with Hugging Face transformers and multiple different prediction strategies (single base transformer prediction, majority vote prediction, soft vote ensemble prediction).
 
 The experiment is implemented in `agnews_distilbert.py`.
-
-------------------------------------------------------------------------
-
-#### Methodological idea
-
-In practice, model selection is often performed using the **same dataset
-that is later used to report performance**. For example:
-
-1.  Train several candidate models.
-2.  Evaluate them on a test set.
-3.  Select the model with the highest test accuracy.
-4.  Report that accuracy as the final performance.
-
-This procedure introduces **selection bias** because the selected model
-is chosen precisely because it performed well on the test data. The
-reported accuracy therefore tends to be **optimistically biased**.
-
-MABT addresses this problem by providing **valid confidence bounds that
-account for the selection step**.
 
 ------------------------------------------------------------------------
 
@@ -170,47 +148,33 @@ using different configurations:
 -   training set size
 
 The goal is to produce **models with different prediction behavior**,
-which creates a meaningful selection problem.
+which creates a meaningful model selection problem.
 
 ------------------------------------------------------------------------
 
 ##### 2. Generate candidate prediction strategies
 
-From the trained base models, several **prediction strategies** are
-constructed.
-
-These represent the **candidate decision rules** that could potentially
-be deployed.
-
-The strategies implemented are:
-
-**Single model strategies**
-
--   `single_model1`
--   `single_model2`
--   `single_model3`
--   `single_model4`
--   `single_model5`
-
-Each strategy corresponds to using one trained base model.
+From the five trained base transformers, several **prediction strategies** are
+constructed. These represent the candidate decision rules that could potentially
+be deployed. Each of the basic prediction strategies corresponds to using one trained base transformer.
 
 ------------------------------------------------------------------------
 
 **Ensemble strategies**
 
 -   `majority_vote_all`\
-    Majority vote across all base models.
+    Majority vote across all base transformers.
 
 -   `soft_vote_all`\
-    Average predicted probabilities across all base models.
+    Average predicted probabilities across all base transformers.
 
 -   `soft_vote_top2`\
-    Soft vote using the two base models with the highest test accuracy.
+    Soft vote using the two base models with the highest test transformers.
 
 -   `soft_vote_top3`\
-    Soft vote using the three best base models.
+    Soft vote using the three best base transformers.
 
-These ensemble strategies represent **typical post-hoc model selection
+These ensemble prediction strategies represent **typical post-hoc model selection
 heuristics** used in practice.
 
 ------------------------------------------------------------------------
@@ -219,7 +183,7 @@ heuristics** used in practice.
 
 All candidate strategies are evaluated on the test set.
 
-The strategy with the highest accuracy would normally be chosen for
+The prediction strategy with the highest accuracy would normally be chosen for
 deployment:
 
 best_strategy = argmax(strategy_accuracy)
@@ -235,26 +199,9 @@ is applied:
 
 bound, tau, t0 = mabt_ci(true_labels, strategy_preds.T)
 
-MABT produces a **lower confidence bound on the true accuracy** that
-remains **valid even after selecting the best strategy based on the test
-data**.
-
-------------------------------------------------------------------------
-
-#### Why this example matters
-
-This example illustrates a very common workflow in applied machine
-learning:
-
--   training multiple models
--   trying different ensembles
--   choosing the best performing model on the test set
-
-Without correction, this process can lead to **overly optimistic
-performance estimates**.
-
-MABT provides a **model-agnostic method to obtain statistically valid
-guarantees after such selection steps**.
+MABT produces a lower confidence bound on the true accuracy that
+remains valid even after selecting the best strategy based on the test
+data.
 
 ------------------------------------------------------------------------
 
@@ -262,7 +209,7 @@ guarantees after such selection steps**.
 
 The script implements the following pipeline:
 
-train multiple base models ↓ construct candidate prediction strategies ↓
+train multiple base transformers ↓ construct candidate prediction strategies ↓
 evaluate strategies on test data ↓ select best strategy (data-dependent)
 ↓ apply MABT to obtain valid post-selection confidence bounds
 
