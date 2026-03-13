@@ -1,5 +1,7 @@
 # %%
 import numpy as np
+import random
+import torch
 
 from datasets import load_dataset
 from mabt import mabt_ci
@@ -16,14 +18,43 @@ from transformers import (
 model_name = "distilbert-base-uncased"
 n_labels = 4
 
+base_model_configs = [
+    {"name": "model1", "seed": 1, "learning_rate": 1e-4, "epochs": 1, "weight_decay": 0.0, "n_train": 500},
+    {"name": "model2", "seed": 2, "learning_rate": 5e-5, "epochs": 1, "weight_decay": 0.0, "n_train": 1000},
+    {"name": "model3", "seed": 3, "learning_rate": 2e-5, "epochs": 2, "weight_decay": 0.01, "n_train": 1500},
+    {"name": "model4", "seed": 4, "learning_rate": 1e-5, "epochs": 3, "weight_decay": 0.01, "n_train": 2000},
+    {"name": "model5", "seed": 5, "learning_rate": 8e-6, "epochs": 4, "weight_decay": 0.1, "n_train": 2000},
+]
+
+
+# %%
+def set_seeds(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def accuracy(labels, preds):
+    acc = (labels == preds).mean()
+    return acc
+
+
+def softmax(logits):
+    logits = np.asarray(logits)
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    exp_logits = np.exp(shifted)
+    return exp_logits / exp_logits.sum(axis=1, keepdims=True)
+
 
 # %%
 raw_data = load_dataset("ag_news")
 
 
 # %%
-train_data = raw_data["train"].shuffle(seed=1).select(range(2000))
-test_data = raw_data["test"].shuffle(seed=1).select(range(1000))
+train_data = raw_data["train"].shuffle(seed=1)
+test_data = raw_data["test"].shuffle(seed=1)
 
 print(f"Example training row:\n{train_data[0]}")
 
@@ -46,56 +77,149 @@ test_data = test_data.rename_column("label", "labels").remove_columns("text")
 
 
 # %%
-model = AutoModelForSequenceClassification.from_pretrained(
-    model_name, 
-    num_labels=n_labels
-)
+true_labels = np.array(test_data["labels"])
 
-
-# %%
-def accuracy(test_pred):
-    logits, labels = test_pred
-    preds = np.argmax(logits, axis=1)
-    acc = (preds == labels).mean()
-    return {"accuracy": acc}
-
-
-# %%
 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-train_args = TrainingArguments(
-    output_dir="./outputs", 
-    eval_strategy="epoch", 
-    save_strategy="no", 
-    logging_strategy="epoch", 
-    num_train_epochs=1, 
-    per_device_train_batch_size=16, 
-    per_device_eval_batch_size=32, 
-    learning_rate=2e-5, 
-    weight_decay=0.01, 
-    report_to="none", 
-    disable_tqdm=True
-)
 
-trainer = Trainer(
-    model=model, 
-    args=train_args, 
-    train_dataset=train_data, 
-    eval_dataset=test_data, 
-    processing_class=tokenizer, 
-    data_collator=data_collator, 
-    compute_metrics=accuracy
-)
+# %%
+def train_base_model(config):
+    
+    print(f"Train base model: {config["name"]} | seed={config["seed"]} | lr={config["learning_rate"]}")
+    set_seeds(config["seed"])
+
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name, 
+        num_labels=n_labels
+    )
+
+    train_subset = train_data.shuffle(seed=config["seed"]).select(range(config["n_train"]))
+
+    train_args = TrainingArguments(
+        output_dir="./outputs", 
+        eval_strategy="epoch", 
+        save_strategy="no", 
+        logging_strategy="epoch", 
+        num_train_epochs=config["epochs"], 
+        per_device_train_batch_size=16, 
+        per_device_eval_batch_size=32, 
+        learning_rate=config["learning_rate"], 
+        weight_decay=config["weight_decay"], 
+        report_to="none", 
+        disable_tqdm=True, 
+        seed=config["seed"]
+    )
+
+    trainer = Trainer(
+        model=model, 
+        args=train_args, 
+        train_dataset=train_subset, 
+        eval_dataset=test_data, 
+        processing_class=tokenizer, 
+        data_collator=data_collator
+    )
+
+    print("Start training...")
+    trainer.train()
+
+    pred_output = trainer.predict(test_data)
+    logits = pred_output.predictions
+    preds = np.argmax(logits, axis=1)
+    probas = softmax(logits)
+    acc = accuracy(true_labels, preds)
+
+    print(f"Test accuracy: {acc:.4f}")
+
+    return {
+        "name": config["name"], 
+        "logits": logits, 
+        "probabilities": probas, 
+        "predictions": preds, 
+        "accuracy": acc
+    }
 
 
 # %%
-print("Start training...")
-trainer.train()
+base_model_results = [train_base_model(config) for config in base_model_configs]
 
 
 # %%
-print("Evaluate on test set...")
-test_metrics = trainer.evaluate()
-test_acc = test_metrics["eval_accuracy"]
-print(f"Test accuracy: {test_acc:.4f}")
+all_bm_preds = np.stack([bm["predictions"] for bm in base_model_results], axis=0)
+all_bm_probas = np.stack([bm["probabilities"] for bm in base_model_results], axis=0)
+all_bm_accs = np.stack([bm["accuracy"] for bm in base_model_results], axis=0)
+
+print(f"Base model accuracies:")
+for bm in base_model_results:
+    print(f"{bm["name"]}: {bm["accuracy"]:.4f}")
+
+
+# %%
+def majority_vote(pred_mat, n_labels):
+    n_test = pred_mat.shape[1]
+    maj_vote_vec = np.empty(n_test, dtype=int)
+
+    for i in range(n_test):
+        counts = np.bincount(pred_mat[:, i], minlength=n_labels)
+        maj_vote_vec[i] = int(np.argmax(counts))
+
+    return maj_vote_vec
+
+
+def soft_vote(proba_tensor):
+    mean_proba_mat = proba_tensor.mean(axis=0)
+    return np.argmax(mean_proba_mat, axis=1)
+
+
+# %%
+strategy_preds = []
+strategy_names = []
+
+#%%
+# Cadidates 1, to 5: each single base model
+for bm in base_model_results:
+    strategy_names.append(f"single_{bm["name"]}")
+    strategy_preds.append(bm["predictions"])
+
+
+# %%
+# Candidate 6: majority vote over all base models
+strategy_names.append("majority_vote_all")
+strategy_preds.append(majority_vote(all_bm_preds, n_labels))
+
+
+# %%
+# Candidate 7: soft vote over all base models
+strategy_names.append("soft_vote_all")
+strategy_preds.append(soft_vote(all_bm_probas))
+
+
+# %%
+# Candidate 8: soft vote over the top-2 base models
+base_order = np.argsort(all_bm_accs)[::-1]
+top2_idx = base_order[:2]
+strategy_names.append("soft_vote_top2")
+strategy_preds.append(soft_vote(all_bm_probas[top2_idx]))
+
+
+# %%
+# Candidate 9: soft vote over the top-3 base models
+top3_idx = base_order[:3]
+strategy_names.append("soft_vote_top3")
+strategy_preds.append(soft_vote(all_bm_probas[top3_idx]))
+
+
+# %%
+strategy_preds = np.stack(strategy_preds, axis=0)
+strategy_accs = np.array([
+    accuracy(true_labels, preds) for preds in strategy_preds
+])
+
+print("Candidate strategy accuracies:")
+for name, acc in zip(strategy_names, strategy_accs):
+    print(f" {name}: {acc:.4f}")
+
+
+# %%
+bound, tau, t0 = mabt_ci(true_labels, strategy_preds.T)
+print(f"Bound: {bound:.6f}")
 # %%
