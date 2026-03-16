@@ -121,7 +121,8 @@ Candidate architectures
 - small CNN
 - large CNN
 
-Framework: PyTorch
+Framework
+PyTorch
 
 Workflow
 
@@ -142,7 +143,8 @@ This example demonstrates that the method integrates naturally with **deep learn
 Dataset  
 AG News text classification dataset
 
-Model: DistilBERT transformer (Hugging Face Transformers)
+Model
+DistilBERT transformer (Hugging Face Transformers)
 
 Candidate models differ in:
 
