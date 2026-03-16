@@ -162,7 +162,7 @@ Candidate models differ in:
 Workflow
 
 - fine‑tune several transformer models
-- generate different prediction strategies
+- generate different prediction strategies (single model, majority vote, soft vote ensembles)
 - select the best strategy
 - compute **MABT confidence bounds**
 
