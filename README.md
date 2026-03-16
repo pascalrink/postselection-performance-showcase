@@ -85,7 +85,8 @@ Each directory contains a **self‑contained experiment** demonstrating how MABT
 **File:** `01_xgboost_shap/xgboost_shap.py`
 
 Dataset  
-German Credit dataset (OpenML)
+
+- German Credit dataset (OpenML)
 
 Models
 
@@ -112,7 +113,8 @@ This example also demonstrates **SHAP explanations** for model interpretability,
 **File:** `02_deep_learning/fashion_mnist_models.py`
 
 Dataset  
-Fashion‑MNIST image classification dataset
+
+- Fashion‑MNIST image classification dataset
 
 Candidate architectures
 
@@ -122,7 +124,8 @@ Candidate architectures
 - large CNN
 
 Framework
-PyTorch
+
+- PyTorch
 
 Workflow
 
@@ -141,10 +144,12 @@ This example demonstrates that the method integrates naturally with **deep learn
 **File:** `03_transformers/agnews_distilbert.py`
 
 Dataset  
-AG News text classification dataset
+
+- AG News text classification dataset
 
 Model
-DistilBERT transformer (Hugging Face Transformers)
+
+- DistilBERT transformer (Hugging Face Transformers)
 
 Candidate models differ in:
 
@@ -170,7 +175,8 @@ This example demonstrates applicability to **modern NLP architectures**.
 **File:** `04_distribution_shift/ctg_shift.py`
 
 Dataset  
-Cardiotocography dataset (UCI ML Repository)
+
+- Cardiotocography dataset (UCI ML Repository)
 
 Models
 
@@ -223,6 +229,27 @@ All experiments are designed to be reproducible:
 - fixed random seeds
 - deterministic data splits
 - explicit model configurations
+
+Running the code requires the following Python libraries:
+
+- datasets
+- mabt
+- matplotlib
+- numpy
+- pandas
+- pathlib
+- random
+- re
+- seaborn
+- shap
+- sklearn
+- torch
+- torchvision
+- transformers
+- ucimlrepo
+- xgboost
+
+See requirements.txt for details.
 
 ---
 
