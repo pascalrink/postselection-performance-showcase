@@ -1,19 +1,14 @@
 
 # Post-Selection Performance Showcase
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-![ML](https://img.shields.io/badge/ML-scikit--learn%20%7C%20PyTorch%20%7C%20Transformers-orange)
-![Statistics](https://img.shields.io/badge/Statistics-Post--Selection%20Inference-purple)
-
----
+This repository serves as a comprehensive showcase for statistical rigor and interpretability in Machine Learning. It specifically addresses the selection bias (winner's curse) that occurs when models are selected purely based on data-driven performance metrics.
 
 ## Overview
 
 Modern machine learning workflows typically evaluate many candidate models and select the best-performing one.  
 However, the performance reported for the selected model is often **optimistically biased**, because the same evaluation results were used for model selection.
 
-This repository demonstrates how to obtain **statistically valid performance guarantees after model selection** using the **Multiplicity‑Adjusted Bootstrap Tilting (MABT)** method.
+This repository demonstrates how to obtain **statistically valid performance guarantees after model selection** using the **Multiplicity‑Adjusted Bootstrap Tilting (MABT)** method. When the best model is chosen from a variety of candidates (e.g., through hyperparameter optimization or the comparison of different model families), the observed test performance is often optimistically biased. MABT provides valid lower confidence limits for performance after selection, ensuring that the reported results are statistically sound.
 
 MABT produces **lower confidence bounds for prediction performance that remain valid even after selecting the best model from many candidates**.
 
