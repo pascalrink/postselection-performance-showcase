@@ -5,8 +5,7 @@ This repository serves as a comprehensive showcase for statistical rigor and int
 
 ## Overview
 
-Modern machine learning workflows typically evaluate many candidate models and select the best-performing one.  
-However, the performance reported for the selected model is often **optimistically biased**, because the same evaluation results were used for model selection.
+Modern machine learning workflows typically evaluate many candidate models and select the best-performing one. However, the performance reported for the selected model is often **optimistically biased**, because the same evaluation results were used for model selection.
 
 This repository demonstrates how to obtain **statistically valid performance guarantees after model selection** using the **Multiplicity‑Adjusted Bootstrap Tilting (MABT)** method. When the best model is chosen from a variety of candidates (e.g., through hyperparameter optimization or the comparison of different model families), the observed test performance is often optimistically biased. MABT provides valid lower confidence limits for performance after selection, ensuring that the reported results are statistically sound.
 
