@@ -19,11 +19,13 @@ from xgboost import XGBClassifier
 # %%
 test_size = 0.3
 random_state = 1
-shift_feat = "Variance"
+shift_feat = "Variance" # feature for shifting dist between train and test
 shift_quantile = 0.7
 
 
 # %%
+
+# Set seeds for reproducibility
 def set_seeds(seed):
     random.seed(seed)
     np.random.seed(seed)#
@@ -44,6 +46,7 @@ def accuracy(true_labels, preds):
     return acc
 
 
+# Load cardiotocography data set from UCI ML repository
 def load_ctg_data():
     ctg = fetch_ucirepo(id=193) # cardiotocography data set
     X = ctg.data.features.copy()
@@ -58,8 +61,8 @@ def load_ctg_data():
     return X, y
 
 
-# Systematic covariate shift: lower values go mostly to training, 
-# upper tail goes to testing
+# Systematic covariate shift: train and test differ in one feature; 
+# lower values go mostly to training, upper tail goes to testing
 def shift_split(X, y, shift_feat, q):
     
     threshold = X[shift_feat].quantile(q)
@@ -83,6 +86,7 @@ def shift_split(X, y, shift_feat, q):
     }
 
 
+# Standard stratified split (baseline scenario)
 def no_shift_split(X, y, test_size=0.3, random_state=1):
     
     splitter = StratifiedShuffleSplit(
@@ -108,6 +112,7 @@ def no_shift_split(X, y, test_size=0.3, random_state=1):
     }
 
 
+# Summarize no-shift and shift-scenario
 def split_summary(scenario, shift_feat): 
     out_df = pd.DataFrame(
         {
@@ -144,6 +149,7 @@ def split_summary(scenario, shift_feat):
     return out_df
 
 
+# Small NN used as a candidate model
 class SmallMLP(nn.Module):
     def __init__(self, input_dim, n_classes):
         super().__init__()
@@ -159,6 +165,7 @@ class SmallMLP(nn.Module):
         return self.net(x)
 
 
+# sklearn-style wrapper to use same fit and evaluate framework
 class TorchMLPClassifier:
     def __init__(
         self,
@@ -249,6 +256,7 @@ class TorchMLPClassifier:
         return np.argmax(probas, axis=1)
 
 
+# Candidate models
 def make_models(random_state=1):
     logreg_model = Pipeline([
         ("scale", StandardScaler()), 
@@ -293,6 +301,7 @@ def make_models(random_state=1):
     }
 
 
+# Fit and evaluate models
 def fit_eval_models(scenario):
     
     models = make_models()

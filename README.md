@@ -130,7 +130,6 @@ This example demonstrates how MABT can be used together with Hugging Face transf
 
 The experiment is implemented in `agnews_distilbert.py`.
 
-------------------------------------------------------------------------
 
 #### Experimental setup
 
@@ -150,7 +149,6 @@ using different configurations:
 The goal is to produce **models with different prediction behavior**,
 which creates a meaningful model selection problem.
 
-------------------------------------------------------------------------
 
 ##### 2. Generate candidate prediction strategies
 
@@ -158,7 +156,6 @@ From the five trained base transformers, several **prediction strategies** are
 constructed. These represent the candidate decision rules that could potentially
 be deployed. Each of the basic prediction strategies corresponds to using one trained base transformer.
 
-------------------------------------------------------------------------
 
 **Ensemble strategies**
 
@@ -177,7 +174,6 @@ be deployed. Each of the basic prediction strategies corresponds to using one tr
 These ensemble prediction strategies represent **typical post-hoc model selection
 heuristics** used in practice.
 
-------------------------------------------------------------------------
 
 ##### 3. Select the best strategy using the test set
 
@@ -190,7 +186,6 @@ best_strategy = argmax(strategy_accuracy)
 
 This step introduces **data-dependent selection**.
 
-------------------------------------------------------------------------
 
 ##### 4. Apply MABT
 
@@ -203,7 +198,6 @@ MABT produces a lower confidence bound on the true accuracy that
 remains valid even after selecting the best strategy based on the test
 data.
 
-------------------------------------------------------------------------
 
 #### Summary of the pipeline
 
@@ -213,7 +207,94 @@ train multiple base transformers ↓ construct candidate prediction strategies �
 evaluate strategies on test data ↓ select best strategy (data-dependent)
 ↓ apply MABT to obtain valid post-selection confidence bounds
 
+### 04_distribution_shift: Distribution Shift and Post‑Selection Performance Inference
 
-## Roadmap for Further Modules
+This example demonstrates how **distribution shift** interacts with model selection and
+performance inference.
 
-### 04_distribution_shift
+The script `ctg_shift.py` uses the **Cardiotocography dataset** from the UCI Machine Learning Repository.
+Four candidate models are trained:
+
+- Multinomial logistic regression
+- Random forest
+- XGBoost
+- A small neural network implemented in PyTorch
+
+The dataset is evaluated in two scenarios:
+
+1. **No shift** – a standard stratified train/test split.
+2. **Distribution shift** – the training and test sets differ systematically in one covariate (`Variance`).
+
+The shift is implemented by assigning observations below a chosen quantile to the training set and
+those above it to the test set.
+
+#### Why Distribution Shift Matters
+
+Many model selection and performance estimation procedures implicitly assume that the
+**training data, validation data, and future deployment data are exchangeable**, meaning
+they are drawn from the same distribution.
+
+When this assumption fails, performance estimates obtained during model development may
+no longer describe the performance of the model in the target population.
+
+#### Implications for NCV and BBC‑CV
+
+Procedures such as
+
+- **Nested Cross‑Validation (NCV)**
+- **BBC‑CV (Bootstrap Bias‑Corrected Cross‑Validation)**
+
+attempt to estimate the performance of a model after selecting it from a set of candidate
+models. These procedures are calibrated for the **data-generating distribution represented
+in the training and validation data**.
+
+Under **distribution shift**, however:
+
+- the selected model may no longer be optimal for the target population,
+- cross‑validation estimates still describe performance under the **training distribution**,
+  not necessarily the **deployment distribution**, and
+- confidence intervals derived from such procedures may therefore be misleading if they
+  are interpreted as guarantees for a different population.
+
+This issue is discussed in detail in:
+
+Rink, P. (2024). *Confidence Limits for Prediction Performance*.  
+https://doi.org/10.26092/elib/3822
+
+#### Role of MABT in This Example
+
+This example **does not show that MABT breaks under distribution shift**.
+
+Instead, MABT is used precisely to address the **post‑selection inference problem**:
+after selecting the best model among several candidates, we want a valid lower
+confidence bound for its predictive performance.
+
+The script constructs a prediction matrix
+
+n_test × n_models
+
+where each column contains the predictions of one candidate model on the test set.
+The MABT procedure is then applied to compute a **lower confidence bound for the accuracy
+of the best-performing model among the candidates**.
+
+Importantly, the guarantee provided by MABT applies to the **evaluation distribution
+represented by the test data** used in the experiment.
+
+#### Interpretation
+
+This example highlights two distinct issues:
+
+1. **Model selection bias**  
+   Selecting the best model among many candidates inflates naive performance estimates.
+   Methods like MABT provide valid post‑selection confidence bounds for this problem.
+
+2. **Distribution shift**  
+   When the deployment distribution differs from the training distribution,
+   performance estimates obtained during model development may not transfer to the
+   target population.
+
+MABT addresses the **first problem** (post‑selection inference).  
+Distribution shift concerns the **second problem** (external validity).
+
+The example illustrates how these two issues interact in practical machine learning
+experiments.
