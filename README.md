@@ -24,7 +24,7 @@ The repository provides **practical implementations of the method across multipl
 - classical machine learning (scikit‑learn)
 - gradient boosting (XGBoost)
 - deep learning (PyTorch)
-- transformer models (HuggingFace)
+- transformer models (Hugging Face)
 - evaluation under distribution shift
 
 ---
@@ -122,9 +122,7 @@ Candidate architectures
 - small CNN
 - large CNN
 
-Framework
-
-PyTorch
+Framework: PyTorch
 
 Workflow
 
@@ -145,9 +143,7 @@ This example demonstrates that the method integrates naturally with **deep learn
 Dataset  
 AG News text classification dataset
 
-Model
-
-DistilBERT transformer (HuggingFace Transformers)
+Model: DistilBERT transformer (Hugging Face Transformers)
 
 Candidate models differ in:
 
@@ -203,7 +199,7 @@ Machine Learning
 - classical ML pipelines (scikit‑learn)
 - gradient boosting (XGBoost)
 - deep learning training (PyTorch)
-- transformer fine‑tuning (HuggingFace)
+- transformer fine‑tuning (Hugging Face)
 
 Statistical Methods
 
@@ -272,7 +268,7 @@ https://github.com/pascalrink/prediction-performance-ci
 
 ## Reference
 
-Rink, P. (2025)  
+Pascal Rink (2025)  
 **Confidence Limits for Prediction Performance**  
 University of Bremen
 
